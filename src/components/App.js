@@ -1,8 +1,14 @@
 import '../styles/App.css';
+import { CreateLink } from './CreateLink';
 import { LinkList } from './LinkList';
 
 function App() {
-  return <LinkList />;
+  return (
+    <>
+      <LinkList />
+      <CreateLink />
+    </>
+  );
 }
 
 export default App;
