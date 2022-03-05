@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link } from './Link';
 import { useQuery, gql } from '@apollo/client';
+import { useLocation } from 'react-router-dom';
+import { LINKS_PER_PAGE } from '../constants';
 
 export const FEED_QUERY = gql`
-  {
-    feed {
+  query FeedQuery($take: Int, $skip: Int, $orderBy: LinkOrderByInput) {
+    feed(take: $take, skip: $skip, orderBy: $orderBy) {
       id
       links {
         id
@@ -22,6 +24,7 @@ export const FEED_QUERY = gql`
           }
         }
       }
+      count
     }
   }
 `;
@@ -47,8 +50,50 @@ const NEW_LINKS_SUBSCRIPTION = gql`
   }
 `;
 
+const NEW_VOTES_SUBSCRIPTION = gql`
+  subscription {
+    newVote {
+      id
+      link {
+        id
+        url
+        description
+        createdAt
+        postedBy {
+          id
+          name
+        }
+        votes {
+          id
+          user {
+            id
+          }
+        }
+      }
+      user {
+        id
+      }
+    }
+  }
+`;
+
+const getQueryVariables = (isNewPage, page) => {
+  const skip = isNewPage ? (page - 1) * LINKS_PER_PAGE : 0;
+  const take = isNewPage ? LINKS_PER_PAGE : 100;
+  const orderBy = { createdAt: 'desc' };
+  return { take, skip, orderBy };
+};
+
 export const LinkList = () => {
-  const { data, loading, error, subscribeToMore } = useQuery(FEED_QUERY);
+  const location = useLocation();
+  const isNewPage = location.pathname.includes('new');
+  const pageIndexParams = location.pathname.split('/');
+  const page = parseInt(pageIndexParams[pageIndexParams.length - 1]);
+  const pageIndex = page ? (page - 1) * LINKS_PER_PAGE : 0;
+  const { data, loading, error, subscribeToMore } = useQuery(FEED_QUERY, {
+    variables: getQueryVariables(isNewPage, page),
+    fetchPolicy: 'cache-and-network',
+  });
 
   subscribeToMore({
     document: NEW_LINKS_SUBSCRIPTION,
@@ -66,6 +111,9 @@ export const LinkList = () => {
         },
       });
     },
+  });
+  subscribeToMore({
+    document: NEW_VOTES_SUBSCRIPTION,
   });
 
   return (
