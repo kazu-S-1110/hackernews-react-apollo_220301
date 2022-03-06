@@ -37,6 +37,7 @@ export const Link = (props) => {
       linkId: link.id,
     },
     update: (cache, { data: { vote } }) => {
+      // 'readQuery' always reads data from the local cache while 'query' might retrieve data either from the cache or remotely
       const { feed } = cache.readQuery({
         query: FEED_QUERY,
         variables: {
